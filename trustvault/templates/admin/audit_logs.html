@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Ledger — TrustVault Admin{% endblock %}
+{% block page_title %}Cryptographic Audit Ledger{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Immutable Audit Ledger</h2>
+        <p class="text-muted small mb-0">Every security and data operation is recorded in an append-only SHA-256 cryptographic chain.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form action="{{ url_for('admin.verify_audit_log_chain') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-shield-check me-1"></i> Verify Cryptographic Ledger
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Filter Toolbar -->
+<div class="tv-card mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('admin.audit_logs') }}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold mb-1">Event Type</label>
+                <select name="event_type" class="form-select form-select-sm">
+                    <option value="">All Events</option>
+                    <option value="AUTH_LOGIN_SUCCESS" {% if event_type == 'AUTH_LOGIN_SUCCESS' %}selected{% endif %}>AUTH_LOGIN_SUCCESS</option>
+                    <option value="AUTH_LOGIN_FAILED" {% if event_type == 'AUTH_LOGIN_FAILED' %}selected{% endif %}>AUTH_LOGIN_FAILED</option>
+                    <option value="AUTH_LOGOUT" {% if event_type == 'AUTH_LOGOUT' %}selected{% endif %}>AUTH_LOGOUT</option>
+                    <option value="AUTH_REGISTER" {% if event_type == 'AUTH_REGISTER' %}selected{% endif %}>AUTH_REGISTER</option>
+                    <option value="DOC_UPLOAD" {% if event_type == 'DOC_UPLOAD' %}selected{% endif %}>DOC_UPLOAD</option>
+                    <option value="DOC_VIEW" {% if event_type == 'DOC_VIEW' %}selected{% endif %}>DOC_VIEW</option>
+                    <option value="DOC_DOWNLOAD" {% if event_type == 'DOC_DOWNLOAD' %}selected{% endif %}>DOC_DOWNLOAD</option>
+                    <option value="DOC_UPDATE" {% if event_type == 'DOC_UPDATE' %}selected{% endif %}>DOC_UPDATE</option>
+                    <option value="DOC_DELETE" {% if event_type == 'DOC_DELETE' %}selected{% endif %}>DOC_DELETE</option>
+                    <option value="PERM_GRANT" {% if event_type == 'PERM_GRANT' %}selected{% endif %}>PERM_GRANT</option>
+                    <option value="PERM_REVOKE" {% if event_type == 'PERM_REVOKE' %}selected{% endif %}>PERM_REVOKE</option>
+                    <option value="ACCESS_DENIED" {% if event_type == 'ACCESS_DENIED' %}selected{% endif %}>ACCESS_DENIED (Security Alert)</option>
+                    <option value="ADMIN_USER_ROLE_CHANGE" {% if event_type == 'ADMIN_USER_ROLE_CHANGE' %}selected{% endif %}>ADMIN_USER_ROLE_CHANGE</option>
+                    <option value="ADMIN_USER_STATUS_CHANGE" {% if event_type == 'ADMIN_USER_STATUS_CHANGE' %}selected{% endif %}>ADMIN_USER_STATUS_CHANGE</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="SUCCESS" {% if status == 'SUCCESS' %}selected{% endif %}>SUCCESS</option>
+                    <option value="DENIED" {% if status == 'DENIED' %}selected{% endif %}>DENIED</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <label class="form-label small fw-semibold mb-1">User Search</label>
+                <input type="text" name="username" class="form-control form-control-sm" placeholder="Search actor..." value="{{ username }}">
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Resource</label>
+                <select name="resource_type" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    <option value="DOCUMENT" {% if resource_type == 'DOCUMENT' %}selected{% endif %}>DOCUMENT</option>
+                    <option value="USER" {% if resource_type == 'USER' %}selected{% endif %}>USER</option>
+                    <option value="ADMIN_ROUTE" {% if resource_type == 'ADMIN_ROUTE' %}selected{% endif %}>ADMIN_ROUTE</option>
+                    <option value="SYSTEM" {% if resource_type == 'SYSTEM' %}selected{% endif %}>SYSTEM</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2 d-flex gap-1 align-self-end">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+                <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="tv-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table tv-table align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp (UTC)</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>Resource</th>
+                        <th>Details</th>
+                        <th>Ledger Hash</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="text-muted small">#{{ log.id }}</td>
+                        <td class="small text-nowrap">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="small fw-semibold">
+                            {{ log.username or 'Unauthenticated' }}
+                            <div class="text-muted small font-monospace" style="font-size: 0.72rem;">{{ log.ip_address }}</div>
+                        </td>
+                        <td class="small">
+                            <span class="badge bg-light text-dark border">{{ log.event_type }}</span>
+                        </td>
+                        <td>
+                            {% if log.status == 'SUCCESS' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">SUCCESS</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">DENIED</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted font-monospace">
+                            {% if log.resource_type %}
+                                {{ log.resource_type }}{% if log.resource_id %}:#{{ log.resource_id }}{% endif %}
+                            {% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="small text-muted text-truncate" style="max-width: 250px;">
+                            {{ log.details or '&mdash;'|safe }}
+                        </td>
+                        <td>
+                            <span class="hash-code d-inline-block text-truncate" style="max-width: 130px;" title="Full Hash: {{ log.entry_hash }} (Previous: {{ log.previous_hash }})">
+                                {{ log.entry_hash[:16] }}...
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted small">No audit log records match the selected criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 border-top">
+            <span class="small text-muted">Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} records)</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.audit_logs', page=pagination.prev_num, event_type=event_type, status=status, username=username, resource_type=resource_type) }}">Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ pagination.page }}</span></li>
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.audit_logs', page=pagination.next_num, event_type=event_type, status=status, username=username, resource_type=resource_type) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

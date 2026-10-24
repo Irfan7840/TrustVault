@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error (500) — TrustVault{% endblock %}
+{% block page_title %}Internal Server Error{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pt-4">
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        <div class="tv-card p-5 shadow-sm">
+            <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex p-4 mb-3">
+                <i class="bi bi-x-octagon display-4"></i>
+            </div>
+            <h2 class="fw-bold mb-2">500 — Server Error</h2>
+            <p class="text-secondary mb-4">
+                An internal server error occurred. Changes have been rolled back to maintain security consistency.
+            </p>
+            <a href="{{ url_for('documents.dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="btn btn-primary px-4">
+                Return to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block unauth_content %}
+<div class="row justify-content-center pt-4">
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        <div class="tv-card p-5 shadow-sm">
+            <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex p-4 mb-3">
+                <i class="bi bi-x-octagon display-4"></i>
+            </div>
+            <h2 class="fw-bold mb-2">500 — Server Error</h2>
+            <p class="text-secondary mb-4">
+                An internal server error occurred.
+            </p>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4">
+                Return to Sign In
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied (403) — TrustVault{% endblock %}
+{% block page_title %}Access Denied{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pt-4">
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        <div class="tv-card p-5 border-danger shadow-sm">
+            <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex p-4 mb-3">
+                <i class="bi bi-shield-slash display-4"></i>
+            </div>
+            <h2 class="fw-bold text-danger mb-2">403 — Access Denied</h2>
+            <p class="text-secondary mb-4">
+                {{ error.description if error and error.description else "You do not have authorization to view or interact with this document or resource." }}
+            </p>
+            <div class="alert alert-warning py-2 small mb-4">
+                <i class="bi bi-info-circle me-1"></i>
+                This unauthorized access attempt has been logged in the TrustVault audit trail with your identity and IP address.
+            </div>
+            <div>
+                <a href="{{ url_for('documents.dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="btn btn-primary px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Return to Safety
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block unauth_content %}
+<div class="row justify-content-center pt-4">
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        <div class="tv-card p-5 border-danger shadow-sm">
+            <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex p-4 mb-3">
+                <i class="bi bi-shield-slash display-4"></i>
+            </div>
+            <h2 class="fw-bold text-danger mb-2">403 — Access Denied</h2>
+            <p class="text-secondary mb-4">
+                {{ error.description if error and error.description else "You do not have authorization to view or interact with this document or resource." }}
+            </p>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4">
+                <i class="bi bi-arrow-left me-1"></i> Return to Sign In
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TrustVault{% endblock %} — Secure Document Sharing</title>
+    <!-- Fonts: Outfit and JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Design System Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <!-- Mobile Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="app-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar-nav" id="sidebarNav">
+            <!-- Brand Header -->
+            <div class="sidebar-header">
+                <a href="{{ url_for('documents.dashboard') }}" class="brand-wrap">
+                    <div class="brand-icon-box">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <div>
+                        <div class="brand-title">TrustVault</div>
+                        <div class="brand-tag">Enterprise SaaS</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="sidebar-content">
+                <div class="nav-section-title">Core Navigation</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="{{ url_for('documents.dashboard') }}" class="nav-link-custom {% if request.endpoint == 'documents.dashboard' %}active{% endif %}">
+                            <i class="bi bi-grid-1x2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('documents.list_documents', tab='owned') }}" class="nav-link-custom {% if request.endpoint == 'documents.list_documents' and request.args.get('tab') != 'shared' %}active{% endif %}">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>My Documents</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('documents.list_documents', tab='shared') }}" class="nav-link-custom {% if request.endpoint == 'documents.list_documents' and request.args.get('tab') == 'shared' %}active{% endif %}">
+                            <i class="bi bi-people"></i>
+                            <span>Shared with Me</span>
+                        </a>
+                    </li>
+                    {% if not current_user.is_viewer %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('documents.upload') }}" class="nav-link-custom {% if request.endpoint == 'documents.upload' %}active{% endif %}">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <span>Upload Document</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="nav-section-title">Security & Access</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="{{ url_for('documents.permissions_center') }}" class="nav-link-custom {% if request.endpoint == 'documents.permissions_center' %}active{% endif %}">
+                            <i class="bi bi-key"></i>
+                            <span>Permissions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('documents.user_activity') }}" class="nav-link-custom {% if request.endpoint == 'documents.user_activity' %}active{% endif %}">
+                            <i class="bi bi-journal-text"></i>
+                            <span>Activity Logs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('auth.settings') }}" class="nav-link-custom {% if request.endpoint == 'auth.settings' %}active{% endif %}">
+                            <i class="bi bi-gear"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+
+                {% if current_user.is_admin %}
+                <div class="nav-section-title text-warning">Administration</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.dashboard') }}" class="nav-link-custom {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                            <i class="bi bi-shield-shaded text-warning"></i>
+                            <span>Security Center</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.users_list') }}" class="nav-link-custom {% if request.endpoint == 'admin.users_list' %}active{% endif %}">
+                            <i class="bi bi-person-gear text-warning"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.audit_logs') }}" class="nav-link-custom {% if request.endpoint == 'admin.audit_logs' %}active{% endif %}">
+                            <i class="bi bi-file-earmark-lock text-warning"></i>
+                            <span>Audit Ledger</span>
+                        </a>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar User Profile Footer -->
+            <div class="sidebar-footer">
+                <div class="user-profile-widget">
+                    <div class="user-avatar">
+                        {{ current_user.username[0]|upper }}
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                        <span class="user-role-badge 
+                            {% if current_user.is_admin %}badge-role-admin
+                            {% elif current_user.is_owner %}badge-role-owner
+                            {% else %}badge-role-viewer{% endif %}">
+                            {{ current_user.role }}
+                        </span>
+                    </div>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline ms-auto">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" title="Sign Out">
+                            <i class="bi bi-box-arrow-right fs-5"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <div class="workspace-area">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-toggle-btn" id="mobileSidebarToggle" aria-label="Toggle navigation">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="security-chip d-none d-sm-inline-flex" title="Cryptographically Chained Audit Ledger Active">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Audit Chain Active</span>
+                    </div>
+                    <a href="{{ url_for('auth.settings') }}" class="btn btn-outline-secondary btn-sm" title="Settings">
+                        <i class="bi bi-gear"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Workspace Content -->
+            <main class="workspace-content">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="row justify-content-center mb-3">
+                            <div class="col-12">
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+                                        {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2 text-success"></i>
+                                        {% elif category == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>
+                                        {% elif category == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2 text-warning"></i>
+                                        {% else %}<i class="bi bi-info-circle-fill me-2 text-info"></i>{% endif %}
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    {% else %}
+    <!-- Unauthenticated Layout (Login, Register, Error Pages) -->
+    <header class="py-3 border-bottom bg-white">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('auth.login') }}" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+                <div class="brand-icon-box" style="width: 34px; height: 34px; font-size: 1.1rem;">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <span class="fw-bold fs-5">TrustVault</span>
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm">Sign In</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Create Account</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="py-5" style="background-color: var(--tv-workspace-bg); min-height: calc(100vh - 65px);">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="row justify-content-center mb-3">
+                        <div class="col-12 col-md-8 col-lg-5">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block unauth_content %}{% endblock %}
+        </div>
+    </main>
+    {% endif %}
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

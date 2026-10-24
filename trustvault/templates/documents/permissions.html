@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Access Permissions — TrustVault{% endblock %}
+{% block page_title %}Access Permissions Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Centralized Permission Control</h2>
+        <p class="text-muted small mb-0">Overview of all active sharing grants on documents you own. Immediate revocation is guaranteed on every action.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('documents.list_documents') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-folder2-open me-1"></i> View Documents
+        </a>
+    </div>
+</div>
+
+<div class="tv-card">
+    <div class="tv-card-header">
+        <span class="fw-bold"><i class="bi bi-key-fill me-2 text-primary"></i> Active Grants on Your Documents</span>
+        <span class="badge bg-secondary">{{ active_shares|length }} Active Grants</span>
+    </div>
+    <div class="card-body p-0">
+        {% if active_shares %}
+        <div class="table-responsive">
+            <table class="table tv-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Granted User</th>
+                        <th>Permission Level</th>
+                        <th>Granted Date</th>
+                        <th class="text-end">Immediate Revocation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for share in active_shares %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">
+                                <a href="{{ url_for('documents.view_document', doc_id=share.document.id) }}" class="text-decoration-none text-dark">
+                                    {{ share.document.title }}
+                                </a>
+                            </div>
+                            <div class="small text-muted font-monospace">{{ share.document.original_filename }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                    {{ share.user.username[0]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold small">{{ share.user.username }}</div>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">{{ share.user.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="user-role-badge {% if share.permission_level == 'EDIT' %}badge-perm-edit{% else %}badge-perm-read{% endif %}">
+                                {{ share.permission_level }}
+                            </span>
+                        </td>
+                        <td class="small text-muted">{{ share.granted_at.strftime('%Y-%m-%d %H:%M UTC') }}</td>
+                        <td class="text-end">
+                            <form action="{{ url_for('documents.revoke_permission', doc_id=share.document.id, perm_id=share.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Immediately revoke access for {{ share.user.username }} on {{ share.document.title }}?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-shield-x me-1"></i> Revoke Now
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-key empty-state-icon"></i>
+            <div class="empty-state-title">No active grants</div>
+            <p class="empty-state-text">You haven't shared any of your documents with other users yet. Open any owned document to grant granular READ or EDIT permissions.</p>
+            <a href="{{ url_for('documents.list_documents') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-folder2-open me-1"></i> Browse Your Documents
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

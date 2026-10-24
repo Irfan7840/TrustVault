@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Document — TrustVault{% endblock %}
+{% block page_title %}Upload Document{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{{ url_for('documents.list_documents') }}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left"></i> Back to Vault
+            </a>
+            <span class="text-muted small">Documents uploaded here are encrypted with UUID disk isolation.</span>
+        </div>
+
+        <div class="tv-card">
+            <div class="tv-card-header">
+                <span class="fw-bold"><i class="bi bi-cloud-arrow-up me-2 text-primary"></i> Upload Secure Document</span>
+                <span class="badge bg-light text-muted border">Max 16 MB</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" id="uploadDocForm" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- Drag & Drop Zone Area -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Document File <span class="text-danger">*</span></label>
+                        <div class="dropzone-container" id="uploadDropzone">
+                            <!-- Hidden actual file input -->
+                            <input type="file" name="document_file" id="document_file" class="d-none" accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.csv,.md">
+                            
+                            <div class="dropzone-icon">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                            </div>
+                            <div class="dropzone-title">Click to upload, or drag and drop your document here</div>
+                            <div class="dropzone-desc">Supported file formats: PDF, DOCX, TXT, CSV, MD, PNG, JPG (Up to 16 MB)</div>
+
+                            <!-- Selected File Preview Badge -->
+                            <div class="file-preview-card d-none" id="filePreview">
+                                <div class="d-flex align-items-center gap-2 text-start">
+                                    <i class="bi bi-file-earmark-check-fill text-success fs-4"></i>
+                                    <div>
+                                        <div class="fw-bold small text-dark" id="selectedFileName">filename.pdf</div>
+                                        <div class="text-muted small" id="selectedFileSize">0 KB</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="removeFileBtn" title="Remove file">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {% for error in form.document_file.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Metadata Fields -->
+                    <div class="row">
+                        <div class="col-12 col-md-8 mb-3">
+                            {{ form.title.label(class="form-label fw-semibold small") }} <span class="text-danger">*</span>
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="e.g. FY2026 Strategic Plan") }}
+                            {% for error in form.title.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-4 mb-3">
+                            {{ form.category.label(class="form-label fw-semibold small") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% for error in form.category.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.description.label(class="form-label fw-semibold small") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3", placeholder="Optional summary, compliance notes, or classification remarks...") }}
+                        {% for error in form.description.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ url_for('documents.list_documents') }}" class="btn btn-light border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold" id="submitUploadBtn">
+                            <i class="bi bi-cloud-arrow-up me-1"></i> Upload to Vault
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

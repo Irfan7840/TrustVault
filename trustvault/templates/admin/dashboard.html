@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Security Center — TrustVault Admin{% endblock %}
+{% block page_title %}Administrative Security Center{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Administrative Security & Telemetry</h2>
+        <p class="text-muted small mb-0">System-wide monitoring, user governance, and cryptographic audit ledger verification.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form action="{{ url_for('admin.verify_audit_log_chain') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-success">
+                <i class="bi bi-shield-check me-1"></i> Verify Cryptographic Ledger
+            </button>
+        </form>
+        <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-primary">
+            <i class="bi bi-journal-text me-1"></i> Full Audit Trail
+        </a>
+    </div>
+</div>
+
+<!-- Telemetry Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-blue">
+                <i class="bi bi-people"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Total Users</div>
+                <div class="kpi-value">{{ total_users }}</div>
+                <a href="{{ url_for('admin.users_list') }}" class="small text-decoration-none">Manage accounts &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-emerald">
+                <i class="bi bi-files"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Total Documents</div>
+                <div class="kpi-value">{{ total_documents }}</div>
+                <span class="small text-muted">Across all owners</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-purple">
+                <i class="bi bi-journal-code"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Audit Entries</div>
+                <div class="kpi-value">{{ total_audit_events }}</div>
+                <span class="small text-muted">Chained SHA-256</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-rose">
+                <i class="bi bi-shield-slash"></i>
+            </div>
+            <div>
+                <div class="kpi-label">Security Denials</div>
+                <div class="kpi-value text-danger">{{ total_denied_events }}</div>
+                <span class="small text-muted">Unauthorized attempts</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Security Denials & System Activity -->
+<div class="row g-4">
+    <!-- Security Alerts -->
+    <div class="col-12 col-lg-6">
+        <div class="tv-card h-100">
+            <div class="tv-card-header bg-danger-subtle text-danger">
+                <span class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Security Denials & Blocked Attempts</span>
+                <span class="badge bg-danger">{{ recent_alerts|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_alerts %}
+                <div class="table-responsive">
+                    <table class="table tv-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Event</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in recent_alerts %}
+                            <tr>
+                                <td class="small text-muted">{{ alert.timestamp.strftime('%H:%M:%S') }}</td>
+                                <td class="small fw-semibold">{{ alert.username or 'Unauthenticated' }}</td>
+                                <td>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ alert.event_type }}</span>
+                                </td>
+                                <td class="small font-monospace text-muted">{{ alert.ip_address }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted small">No access denial incidents recorded.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent System Audit Stream -->
+    <div class="col-12 col-lg-6">
+        <div class="tv-card h-100">
+            <div class="tv-card-header">
+                <span class="fw-bold"><i class="bi bi-activity me-1 text-primary"></i> System Activity Stream</span>
+                <a href="{{ url_for('admin.audit_logs') }}" class="small text-decoration-none">Full Ledger</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tv-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for act in recent_activity %}
+                            <tr>
+                                <td class="small text-muted">{{ act.timestamp.strftime('%H:%M:%S') }}</td>
+                                <td class="small fw-semibold">{{ act.username or 'System' }}</td>
+                                <td class="small text-truncate" style="max-width: 140px;">{{ act.event_type }}</td>
+                                <td>
+                                    {% if act.status == 'SUCCESS' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Success</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Denied</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

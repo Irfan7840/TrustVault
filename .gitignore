@@ -1,0 +1,32 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables & secrets
+.env
+instance/
+*.sqlite3
+*.db
+
+# Storage folder (ignore uploaded documents, keep directory structure)
+storage/documents/*
+!storage/documents/.gitkeep
+
+# Pytest & test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE files
+.vscode/
+.idea/
+*.swp

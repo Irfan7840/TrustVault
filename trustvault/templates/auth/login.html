@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — TrustVault{% endblock %}
+
+{% block unauth_content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-5">
+        <div class="tv-card shadow-sm border-0" style="border: 1px solid var(--tv-border-subtle) !important;">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="brand-icon-box mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Sign in to TrustVault</h3>
+                    <p class="text-muted small">Enter your credentials to access your secure documents.</p>
+                </div>
+
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.username.label(class="form-label fw-semibold small") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                            {{ form.username(class="form-control border-start-0" + (" is-invalid" if form.username.errors else ""), placeholder="Username or email", autofocus=True) }}
+                        </div>
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            {{ form.password.label(class="form-label fw-semibold small mb-0") }}
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-key"></i></span>
+                            {{ form.password(class="form-control border-start-0" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+                        </div>
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.remember(class="form-check-input") }}
+                        {{ form.remember.label(class="form-check-label text-muted small") }}
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary py-2 fw-semibold">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Vault
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center pt-3 border-top">
+                    <span class="text-muted small">Don't have an account?</span>
+                    <a href="{{ url_for('auth.register') }}" class="small fw-semibold text-decoration-none ms-1 text-primary">Create Account</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-3 text-muted small">
+            <i class="bi bi-shield-check text-success me-1"></i> Zero-Trust Authorization &bull; Cryptographically Verified
+        </div>
+    </div>
+</div>
+{% endblock %}

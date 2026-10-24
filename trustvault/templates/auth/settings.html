@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — TrustVault{% endblock %}
+{% block page_title %}Account Settings & Security{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+    <!-- Left Column: User Profile & Security Status -->
+    <div class="col-12 col-lg-5">
+        <div class="tv-card mb-4">
+            <div class="tv-card-header">
+                <i class="bi bi-person-badge me-2 text-primary"></i> Profile Information
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="user-avatar" style="width: 54px; height: 54px; font-size: 1.35rem;">
+                        {{ current_user.username[0]|upper }}
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">{{ current_user.username }}</h5>
+                        <div class="text-muted small">{{ current_user.email }}</div>
+                        <span class="user-role-badge mt-1 
+                            {% if current_user.is_admin %}badge-role-admin
+                            {% elif current_user.is_owner %}badge-role-owner
+                            {% else %}badge-role-viewer{% endif %}">
+                            {{ current_user.role }} Account
+                        </span>
+                    </div>
+                </div>
+
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Account Status:</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Member Since:</span>
+                        <span class="fw-semibold">{{ current_user.created_at.strftime('%Y-%m-%d') }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Session Cookie:</span>
+                        <span class="font-monospace text-muted">HttpOnly, SameSite=Lax</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tv-card">
+            <div class="tv-card-header">
+                <i class="bi bi-shield-check me-2 text-success"></i> Security Architecture
+            </div>
+            <div class="card-body small">
+                <div class="d-flex align-items-start gap-2 mb-3">
+                    <i class="bi bi-check-circle-fill text-success fs-6 mt-1"></i>
+                    <div>
+                        <strong>Zero-Trust Authorization</strong>
+                        <div class="text-muted">Every file read/download re-checks permissions directly on the database.</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start gap-2 mb-3">
+                    <i class="bi bi-check-circle-fill text-success fs-6 mt-1"></i>
+                    <div>
+                        <strong>Cryptographic Hash Chain</strong>
+                        <div class="text-muted">Audit records form an immutable SHA-256 ledger with tamper detection.</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-check-circle-fill text-success fs-6 mt-1"></i>
+                    <div>
+                        <strong>Isolated Disk Storage</strong>
+                        <div class="text-muted">Files stored with randomized UUIDv4 identifiers preventing path traversal.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Change Password Form -->
+    <div class="col-12 col-lg-7">
+        <div class="tv-card">
+            <div class="tv-card-header">
+                <i class="bi bi-key me-2 text-primary"></i> Change Password
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.current_password.label(class="form-label fw-semibold small") }}
+                        {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else ""), placeholder="Enter your current password") }}
+                        {% for error in form.current_password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.new_password.label(class="form-label fw-semibold small") }}
+                        {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else ""), placeholder="Min 8 characters, 1 uppercase, 1 digit") }}
+                        {% for error in form.new_password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.confirm_new_password.label(class="form-label fw-semibold small") }}
+                        {{ form.confirm_new_password(class="form-control" + (" is-invalid" if form.confirm_new_password.errors else ""), placeholder="Repeat your new password") }}
+                        {% for error in form.confirm_new_password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-circle me-1"></i> Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

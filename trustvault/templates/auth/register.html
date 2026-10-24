@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account — TrustVault{% endblock %}
+
+{% block unauth_content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-6">
+        <div class="tv-card shadow-sm border-0" style="border: 1px solid var(--tv-border-subtle) !important;">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="brand-icon-box mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Create Your Account</h3>
+                    <p class="text-muted small">Choose your role and register to access TrustVault.</p>
+                </div>
+
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            {{ form.username.label(class="form-label fw-semibold small") }}
+                            {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="e.g. alex_corp") }}
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Letters, numbers, underscores.</div>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            {{ form.email.label(class="form-label fw-semibold small") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="alex@company.com") }}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.role.label(class="form-label fw-semibold small") }}
+                        {{ form.role(class="form-select" + (" is-invalid" if form.role.errors else "")) }}
+                        {% for error in form.role.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text small">
+                            Owners can upload and manage documents; Viewers access documents shared with them.
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            {{ form.password.label(class="form-label fw-semibold small") }}
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+                            {% for error in form.password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Min 8 chars, 1 uppercase, 1 digit.</div>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-4">
+                            {{ form.confirm_password.label(class="form-label fw-semibold small") }}
+                            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="••••••••") }}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary py-2 fw-semibold">
+                            <i class="bi bi-shield-check me-1"></i> Register Secure Account
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center pt-3 border-top">
+                    <span class="text-muted small">Already have an account?</span>
+                    <a href="{{ url_for('auth.login') }}" class="small fw-semibold text-decoration-none ms-1 text-primary">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

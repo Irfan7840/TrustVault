@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Documents — TrustVault{% endblock %}
+{% block page_title %}Document Vault{% endblock %}
+
+{% block content %}
+<!-- Top Header & Tabs -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+    <!-- Scope Tabs -->
+    <ul class="nav nav-pills gap-1">
+        <li class="nav-item">
+            <a class="nav-link {% if tab == 'all' or not tab %}active{% endif %}" href="{{ url_for('documents.list_documents', tab='all', q=query_search, category=selected_category, sort=sort) }}">
+                All Documents <span class="badge bg-secondary-subtle text-secondary ms-1">{{ total_owned_count + total_shared_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if tab == 'owned' %}active{% endif %}" href="{{ url_for('documents.list_documents', tab='owned', q=query_search, category=selected_category, sort=sort) }}">
+                My Documents <span class="badge bg-secondary-subtle text-secondary ms-1">{{ total_owned_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if tab == 'shared' %}active{% endif %}" href="{{ url_for('documents.list_documents', tab='shared', q=query_search, category=selected_category, sort=sort) }}">
+                Shared with Me <span class="badge bg-secondary-subtle text-secondary ms-1">{{ total_shared_count }}</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- Quick Upload Button -->
+    {% if not current_user.is_viewer %}
+    <div>
+        <a href="{{ url_for('documents.upload') }}" class="btn btn-primary">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Upload Document
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search & Filter Controls Card -->
+<div class="tv-card mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('documents.list_documents') }}" class="row g-2 align-items-center">
+            <input type="hidden" name="tab" value="{{ tab }}">
+
+            <!-- Keyword Search -->
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search by name, filename, notes..." value="{{ query_search }}">
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="col-6 col-md-3">
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Sort Option -->
+            <div class="col-6 col-md-2">
+                <select name="sort" class="form-select form-select-sm">
+                    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                    <option value="name" {% if sort == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                </select>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                {% if query_search or selected_category or (sort and sort != 'newest') %}
+                <a href="{{ url_for('documents.list_documents', tab=tab) }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Documents List Content -->
+<div class="tv-card">
+    <div class="card-body p-0">
+        {% set has_owned = (owned_docs|length > 0) and (tab != 'shared') %}
+        {% set has_shared = (shared_permissions|length > 0) and (tab != 'owned') %}
+
+        {% if has_owned or has_shared %}
+        <div class="table-responsive">
+            <table class="table tv-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Category</th>
+                        <th>Owner</th>
+                        <th>Size</th>
+                        <th>Modified</th>
+                        <th>Access Level</th>
+                        <th class="text-end">Authorized Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Owned Documents Section -->
+                    {% if tab != 'shared' %}
+                        {% for doc in owned_docs %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="file-icon-box 
+                                        {% if doc.original_filename.endswith('.pdf') %}file-icon-pdf
+                                        {% elif doc.original_filename.endswith(('.png', '.jpg', '.jpeg')) %}file-icon-img
+                                        {% elif doc.original_filename.endswith(('.doc', '.docx')) %}file-icon-doc
+                                        {% elif doc.original_filename.endswith(('.csv', '.xlsx')) %}file-icon-data
+                                        {% else %}file-icon-txt{% endif %}">
+                                        <i class="bi 
+                                            {% if doc.original_filename.endswith('.pdf') %}bi-filetype-pdf
+                                            {% elif doc.original_filename.endswith(('.png', '.jpg', '.jpeg')) %}bi-file-earmark-image
+                                            {% elif doc.original_filename.endswith(('.doc', '.docx')) %}bi-filetype-docx
+                                            {% elif doc.original_filename.endswith(('.csv', '.xlsx')) %}bi-filetype-csv
+                                            {% else %}bi-file-earmark-text{% endif %}">
+                                        </i>
+                                    </div>
+                                    <div class="text-truncate" style="max-width: 240px;">
+                                        <a href="{{ url_for('documents.view_document', doc_id=doc.id) }}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ doc.title }}
+                                        </a>
+                                        <div class="small text-muted text-truncate">{{ doc.original_filename }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge-cat">{{ doc.category }}</span></td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-person-check-fill text-primary me-1"></i> You (Owner)
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ (doc.file_size / 1024)|round(1) }} KB</td>
+                            <td class="small text-muted">{{ doc.updated_at.strftime('%Y-%m-%d') }}</td>
+                            <td><span class="user-role-badge badge-perm-owner">Owner</span></td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('documents.view_document', doc_id=doc.id) }}" class="btn btn-outline-secondary" title="View Details">
+                                        <i class="bi bi-eye"></i> Details
+                                    </a>
+                                    <a href="{{ url_for('documents.download', doc_id=doc.id) }}" class="btn btn-outline-primary" title="Download File">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <a href="{{ url_for('documents.edit', doc_id=doc.id) }}" class="btn btn-outline-secondary" title="Edit Metadata">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Shared Documents Section -->
+                    {% if tab != 'owned' %}
+                        {% for perm in shared_permissions %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="file-icon-box 
+                                        {% if perm.document.original_filename.endswith('.pdf') %}file-icon-pdf
+                                        {% elif perm.document.original_filename.endswith(('.png', '.jpg', '.jpeg')) %}file-icon-img
+                                        {% elif perm.document.original_filename.endswith(('.doc', '.docx')) %}file-icon-doc
+                                        {% elif perm.document.original_filename.endswith(('.csv', '.xlsx')) %}file-icon-data
+                                        {% else %}file-icon-txt{% endif %}">
+                                        <i class="bi 
+                                            {% if perm.document.original_filename.endswith('.pdf') %}bi-filetype-pdf
+                                            {% elif perm.document.original_filename.endswith(('.png', '.jpg', '.jpeg')) %}bi-file-earmark-image
+                                            {% elif perm.document.original_filename.endswith(('.doc', '.docx')) %}bi-filetype-docx
+                                            {% elif perm.document.original_filename.endswith(('.csv', '.xlsx')) %}bi-filetype-csv
+                                            {% else %}bi-file-earmark-text{% endif %}">
+                                        </i>
+                                    </div>
+                                    <div class="text-truncate" style="max-width: 240px;">
+                                        <a href="{{ url_for('documents.view_document', doc_id=perm.document.id) }}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ perm.document.title }}
+                                        </a>
+                                        <div class="small text-muted text-truncate">{{ perm.document.original_filename }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge-cat">{{ perm.document.category }}</span></td>
+                            <td>
+                                <span class="badge bg-light text-muted border">
+                                    <i class="bi bi-person me-1"></i> {{ perm.document.owner.username }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ (perm.document.file_size / 1024)|round(1) }} KB</td>
+                            <td class="small text-muted">{{ perm.document.updated_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <span class="user-role-badge {% if perm.permission_level == 'EDIT' %}badge-perm-edit{% else %}badge-perm-read{% endif %}">
+                                    {{ perm.permission_level }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('documents.view_document', doc_id=perm.document.id) }}" class="btn btn-outline-secondary" title="View Details">
+                                        <i class="bi bi-eye"></i> Details
+                                    </a>
+                                    <a href="{{ url_for('documents.download', doc_id=perm.document.id) }}" class="btn btn-outline-primary" title="Download File">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    {% if perm.permission_level == 'EDIT' %}
+                                    <a href="{{ url_for('documents.edit', doc_id=perm.document.id) }}" class="btn btn-outline-secondary" title="Edit Metadata">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- Professional Empty State -->
+        <div class="empty-state">
+            <i class="bi bi-folder-x empty-state-icon"></i>
+            <div class="empty-state-title">No documents found</div>
+            <p class="empty-state-text">
+                {% if query_search or selected_category %}
+                    No documents match your filter criteria. Try adjusting your search keyword or clearing the filters.
+                {% else %}
+                    You do not have any documents in this view.
+                {% endif %}
+            </p>
+            {% if query_search or selected_category %}
+                <a href="{{ url_for('documents.list_documents', tab=tab) }}" class="btn btn-outline-secondary btn-sm">
+                    Clear Filters
+                </a>
+            {% elif not current_user.is_viewer %}
+                <a href="{{ url_for('documents.upload') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Upload Document
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} — TrustVault{% endblock %}
+{% block page_title %}Document Details{% endblock %}
+
+{% block content %}
+<!-- Top Header & Actions -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom gap-3">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('documents.list_documents') }}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Vault
+        </a>
+        <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h2 class="h4 fw-bold mb-0">{{ document.title }}</h2>
+                <span class="badge-cat">{{ document.category }}</span>
+                {% if is_owner %}
+                    <span class="user-role-badge badge-perm-owner">You Own This</span>
+                {% else %}
+                    <span class="user-role-badge badge-perm-read">Shared With You</span>
+                {% endif %}
+            </div>
+            <div class="text-muted small mt-1">ID: #{{ document.id }} &bull; Added {{ document.created_at.strftime('%Y-%m-%d %H:%M UTC') }}</div>
+        </div>
+    </div>
+    
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+        <a href="{{ url_for('documents.download', doc_id=document.id) }}" class="btn btn-primary">
+            <i class="bi bi-download me-1"></i> Download File
+        </a>
+
+        {% if can_edit %}
+        <a href="{{ url_for('documents.edit', doc_id=document.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        {% endif %}
+
+        {% if is_owner %}
+        <form action="{{ url_for('documents.delete', doc_id=document.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete this document and its file? This action is immediate and irrevocable.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Delete
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Metadata & Activity -->
+    <div class="col-12 col-lg-7">
+        <!-- Metadata Card -->
+        <div class="tv-card mb-4">
+            <div class="tv-card-header">
+                <span class="fw-bold"><i class="bi bi-file-earmark-text me-2 text-primary"></i> Document Specifications</span>
+                <span class="small text-muted font-monospace">{{ document.original_filename }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Original Filename</div>
+                        <div class="fw-semibold text-truncate">{{ document.original_filename }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Category</div>
+                        <div><span class="badge-cat">{{ document.category }}</span></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">File Size</div>
+                        <div class="fw-semibold">{{ (document.file_size / 1024)|round(1) }} KB ({{ document.file_size }} bytes)</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">MIME Type</div>
+                        <div class="font-monospace small">{{ document.mime_type }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Document Owner</div>
+                        <div class="fw-semibold">{{ document.owner.username }} ({{ document.owner.email }})</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Last Modified</div>
+                        <div class="small">{{ document.updated_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small">Description</div>
+                        <div class="p-2 bg-light rounded text-secondary small">{{ document.description or "No description provided." }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Activity & Audit Log -->
+        <div class="tv-card">
+            <div class="tv-card-header">
+                <span class="fw-bold"><i class="bi bi-activity me-2 text-primary"></i> Access & Audit Trail</span>
+                <span class="badge bg-light text-muted border">{{ doc_audits|length }} Events</span>
+            </div>
+            <div class="card-body p-0">
+                {% if doc_audits %}
+                <div class="table-responsive">
+                    <table class="table tv-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Status</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in doc_audits %}
+                            <tr>
+                                <td class="small text-muted">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td class="small fw-semibold">{{ log.username or 'Anonymous' }}</td>
+                                <td class="small"><span class="badge bg-light text-dark border">{{ log.event_type }}</span></td>
+                                <td>
+                                    {% if log.status == 'SUCCESS' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Success</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Denied</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small font-monospace text-muted">{{ log.ip_address }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted small">No access events recorded yet for this document.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Permission Management -->
+    <div class="col-12 col-lg-5">
+        {% if is_owner %}
+            <!-- Grant New Permission Card -->
+            <div class="tv-card mb-4 border-primary">
+                <div class="tv-card-header bg-primary-subtle text-primary fw-bold">
+                    <i class="bi bi-person-plus-fill me-1"></i> Grant Document Access
+                </div>
+                <div class="card-body p-3">
+                    <form action="{{ url_for('documents.grant_permission', doc_id=document.id) }}" method="POST">
+                        {{ grant_form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ grant_form.username_or_email.label(class="form-label fw-semibold small") }}
+                            {{ grant_form.username_or_email(class="form-control form-control-sm", placeholder="Enter username or email") }}
+                            <div class="form-text small">Enter the registered username or email to grant access.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ grant_form.permission_level.label(class="form-label fw-semibold small") }}
+                            {{ grant_form.permission_level(class="form-select form-select-sm") }}
+                            <div class="form-text small">
+                                <strong>Read</strong>: View and download.<br>
+                                <strong>Edit</strong>: View, download, and edit metadata.
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+                                <i class="bi bi-key-fill me-1"></i> Grant Access
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Permissions List -->
+            <div class="tv-card">
+                <div class="tv-card-header">
+                    <span class="fw-bold"><i class="bi bi-people-fill me-2 text-primary"></i> Active Access Grants</span>
+                    <span class="badge bg-secondary">{{ active_permissions|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if active_permissions %}
+                        <ul class="list-group list-group-flush">
+                            {% for perm in active_permissions %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <div class="fw-bold small">{{ perm.user.username }}</div>
+                                    <div class="text-muted small">{{ perm.user.email }}</div>
+                                    <div class="small text-muted mt-1">
+                                        Level: 
+                                        <span class="user-role-badge {% if perm.permission_level == 'EDIT' %}badge-perm-edit{% else %}badge-perm-read{% endif %}">
+                                            {{ perm.permission_level }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <form action="{{ url_for('documents.revoke_permission', doc_id=document.id, perm_id=perm.id) }}" method="POST" onsubmit="return confirm('Immediately revoke access for {{ perm.user.username }}? Every subsequent request will be blocked immediately.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Revoke Immediately">
+                                        <i class="bi bi-shield-x me-1"></i> Revoke
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="p-4 text-center text-muted small">
+                            <i class="bi bi-shield-lock display-6 d-block mb-2 text-secondary"></i>
+                            This document is currently private to you. No explicit shares have been granted.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <!-- Viewer / Grantee Access Summary -->
+            <div class="tv-card">
+                <div class="tv-card-header">
+                    <span class="fw-bold"><i class="bi bi-shield-check me-2 text-success"></i> Your Access Permissions</span>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        This document is owned by <strong>{{ document.owner.username }}</strong> and explicitly shared with your account.
+                    </p>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> You can view details and download the file.</li>
+                        {% if can_edit %}
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> You can edit the title, category, and description.</li>
+                        {% else %}
+                        <li class="mb-2 text-muted"><i class="bi bi-dash-circle me-2"></i> Editing is restricted to editors and the owner.</li>
+                        {% endif %}
+                        <li class="text-muted"><i class="bi bi-dash-circle me-2"></i> Only the document owner can grant permissions or delete this document.</li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
